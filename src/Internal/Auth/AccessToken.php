@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Twila\Credicarro\Internal\Auth;
 
+use JsonSerializable;
+use LogicException;
+use SensitiveParameter;
+
 /**
  * @internal
  */
-final class AccessToken implements \JsonSerializable
+final class AccessToken implements JsonSerializable
 {
     /** @var \Closure():string o token fica dentro de uma closure: var_export/print_r não o exibem */
     private $value;
@@ -16,7 +20,7 @@ final class AccessToken implements \JsonSerializable
     private $expiresAt;
 
     public function __construct(
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $value,
         int $expiresAt
     ) {
@@ -59,15 +63,18 @@ final class AccessToken implements \JsonSerializable
      */
     public function __serialize(): array
     {
-        throw new \LogicException('Este objeto guarda credenciais e não pode ser serializado.');
+        throw new LogicException('Este objeto guarda credenciais e não pode ser serializado.');
     }
 
     /**
+     * A assinatura exige $data: o método só recusa a desserialização.
+     *
      * @param array<string, mixed> $data
      * @psalm-suppress UnusedParam
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
     public function __unserialize(array $data): void
     {
-        throw new \LogicException('Este objeto guarda credenciais e não pode ser desserializado.');
+        throw new LogicException('Este objeto guarda credenciais e não pode ser desserializado.');
     }
 }

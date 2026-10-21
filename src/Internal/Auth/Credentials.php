@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Twila\Credicarro\Internal\Auth;
 
+use JsonSerializable;
+use LogicException;
+use SensitiveParameter;
+
 /**
  * Credenciais do cliente de integração. O segredo vive só dentro deste objeto (propriedade privada, sem getter) e
  * nunca é passado como argumento de método: assim não aparece em stack traces (`zend.exception_ignore_args=0`),
@@ -11,7 +15,7 @@ namespace Twila\Credicarro\Internal\Auth;
  *
  * @internal
  */
-final class Credentials implements \JsonSerializable
+final class Credentials implements JsonSerializable
 {
     /** @var string */
     private $clientId;
@@ -21,7 +25,7 @@ final class Credentials implements \JsonSerializable
 
     public function __construct(
         string $clientId,
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $clientSecret
     ) {
         $this->clientId = $clientId;
@@ -79,15 +83,18 @@ final class Credentials implements \JsonSerializable
      */
     public function __serialize(): array
     {
-        throw new \LogicException('Este objeto guarda credenciais e não pode ser serializado.');
+        throw new LogicException('Este objeto guarda credenciais e não pode ser serializado.');
     }
 
     /**
+     * A assinatura exige $data: o método só recusa a desserialização.
+     *
      * @param array<string, mixed> $data
      * @psalm-suppress UnusedParam
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
     public function __unserialize(array $data): void
     {
-        throw new \LogicException('Este objeto guarda credenciais e não pode ser desserializado.');
+        throw new LogicException('Este objeto guarda credenciais e não pode ser desserializado.');
     }
 }

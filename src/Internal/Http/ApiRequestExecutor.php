@@ -6,6 +6,8 @@ namespace Twila\Credicarro\Internal\Http;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
+use InvalidArgumentException;
+use SensitiveParameter;
 use Twila\Credicarro\Config\ResilienceOptions;
 use Twila\Credicarro\Errors\ExceptionFactory;
 use Twila\Credicarro\Internal\Auth\AccessTokenProvider;
@@ -117,7 +119,7 @@ final class ApiRequestExecutor
         // 401 reutilizam a mesma string.
         $encodedBody = $body === null ? null : json_encode($body);
         if ($encodedBody === false) {
-            throw new \InvalidArgumentException('Não foi possível serializar o corpo da requisição em JSON.');
+            throw new InvalidArgumentException('Não foi possível serializar o corpo da requisição em JSON.');
         }
 
         return $this->resilience->execute(
@@ -162,7 +164,7 @@ final class ApiRequestExecutor
         ?string $encodedBody,
         ?string $idempotencyKey,
         int $attemptTimeoutMs,
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $token
     ): ApiResponse {
         // baseUrl sempre termina com "/" (garantido em ClientOptionsResolver) e path nunca começa com "/":

@@ -36,13 +36,21 @@ final class ClientOptionsResolver
             throw new CredicarroConfigurationException('clientSecret é obrigatório.');
         }
 
-        if ($options->getBaseUrl() === null) {
-            Environment::baseUrl($options->getEnvironment());
-        } else {
-            self::validateBaseUrl($options->getBaseUrl());
+        self::validateEndpoint($options);
+        self::validateResilience($options->getResilience());
+    }
+
+    private static function validateEndpoint(ClientOptions $options): void
+    {
+        $baseUrl = $options->getBaseUrl();
+        if ($baseUrl !== null) {
+            self::validateBaseUrl($baseUrl);
+
+            return;
         }
 
-        self::validateResilience($options->getResilience());
+        // Sem baseUrl, o ambiente precisa ser conhecido: Environment::baseUrl lança para valor inválido.
+        Environment::baseUrl($options->getEnvironment());
     }
 
     private static function validateBaseUrl(string $baseUrl): void
@@ -71,44 +79,35 @@ final class ClientOptionsResolver
 
     private static function validateResilience(ResilienceOptions $resilience): void
     {
-        if ($resilience->maxRetryAttempts < 1) {
-            throw new CredicarroConfigurationException('resilience.maxRetryAttempts deve ser maior ou igual a 1.');
-        }
+        self::requireThat(
+            $resilience->maxRetryAttempts >= 1,
+            'resilience.maxRetryAttempts deve ser maior ou igual a 1.'
+        );
+        self::requireThat($resilience->totalTimeoutMs > 0, 'resilience.totalTimeoutMs deve ser maior que zero.');
+        self::requireThat($resilience->attemptTimeoutMs > 0, 'resilience.attemptTimeoutMs deve ser maior que zero.');
+        self::requireThat(
+            $resilience->documentUploadAttemptTimeoutMs > 0,
+            'resilience.documentUploadAttemptTimeoutMs deve ser maior que zero.'
+        );
+        self::requireThat(
+            $resilience->attemptTimeoutMs <= $resilience->totalTimeoutMs,
+            'resilience.attemptTimeoutMs não pode ser maior que resilience.totalTimeoutMs.'
+        );
+        self::requireThat($resilience->retryBaseDelayMs >= 0, 'resilience.retryBaseDelayMs não pode ser negativo.');
+        self::requireThat(
+            $resilience->circuitBreakerFailureRatio > 0 && $resilience->circuitBreakerFailureRatio <= 1,
+            'resilience.circuitBreakerFailureRatio deve estar entre 0 (exclusivo) e 1 (inclusivo).'
+        );
+        self::requireThat(
+            $resilience->circuitBreakerMinimumThroughput >= 2,
+            'resilience.circuitBreakerMinimumThroughput deve ser maior ou igual a 2.'
+        );
+    }
 
-        if ($resilience->totalTimeoutMs <= 0) {
-            throw new CredicarroConfigurationException('resilience.totalTimeoutMs deve ser maior que zero.');
-        }
-
-        if ($resilience->attemptTimeoutMs <= 0) {
-            throw new CredicarroConfigurationException('resilience.attemptTimeoutMs deve ser maior que zero.');
-        }
-
-        if ($resilience->documentUploadAttemptTimeoutMs <= 0) {
-            throw new CredicarroConfigurationException(
-                'resilience.documentUploadAttemptTimeoutMs deve ser maior que zero.'
-            );
-        }
-
-        if ($resilience->attemptTimeoutMs > $resilience->totalTimeoutMs) {
-            throw new CredicarroConfigurationException(
-                'resilience.attemptTimeoutMs não pode ser maior que resilience.totalTimeoutMs.'
-            );
-        }
-
-        if ($resilience->retryBaseDelayMs < 0) {
-            throw new CredicarroConfigurationException('resilience.retryBaseDelayMs não pode ser negativo.');
-        }
-
-        if ($resilience->circuitBreakerFailureRatio <= 0 || $resilience->circuitBreakerFailureRatio > 1) {
-            throw new CredicarroConfigurationException(
-                'resilience.circuitBreakerFailureRatio deve estar entre 0 (exclusivo) e 1 (inclusivo).'
-            );
-        }
-
-        if ($resilience->circuitBreakerMinimumThroughput < 2) {
-            throw new CredicarroConfigurationException(
-                'resilience.circuitBreakerMinimumThroughput deve ser maior ou igual a 2.'
-            );
+    private static function requireThat(bool $valid, string $message): void
+    {
+        if (!$valid) {
+            throw new CredicarroConfigurationException($message);
         }
     }
 }

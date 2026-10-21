@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Twila\Credicarro\Proposals;
 
+use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
+use SensitiveParameter;
 use Twila\Credicarro\Errors\CredicarroValidationException;
 use Twila\Credicarro\Internal\Masking\MasksSensitiveData;
 use Twila\Credicarro\Internal\Validation;
@@ -38,7 +40,7 @@ final class DocumentFile
      * @param string $content bytes do arquivo (1 byte a 10 MiB)
      */
     public function __construct(
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $content,
         string $fileName
     ) {
@@ -59,7 +61,7 @@ final class DocumentFile
     }
 
     public static function fromBytes(
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $content,
         string $fileName
     ): self {
@@ -75,28 +77,46 @@ final class DocumentFile
     {
         self::validateName($fileName);
 
-        $content = '';
         if ($stream instanceof StreamInterface) {
-            while (!$stream->eof() && strlen($content) <= self::MAX_BYTES) {
-                $chunk = $stream->read(self::CHUNK_BYTES);
-                if ($chunk === '') {
-                    break;
-                }
-                $content .= $chunk;
-            }
-        } elseif (is_resource($stream)) {
-            while (!feof($stream) && strlen($content) <= self::MAX_BYTES) {
-                $chunk = fread($stream, self::CHUNK_BYTES);
-                if ($chunk === false || $chunk === '') {
-                    break;
-                }
-                $content .= $chunk;
-            }
-        } else {
-            throw new \InvalidArgumentException('O stream informado deve ser um resource ou um StreamInterface.');
+            return new self(self::readStreamInterface($stream), $fileName);
         }
 
-        return new self($content, $fileName);
+        if (is_resource($stream)) {
+            return new self(self::readResource($stream), $fileName);
+        }
+
+        throw new InvalidArgumentException('O stream informado deve ser um resource ou um StreamInterface.');
+    }
+
+    private static function readStreamInterface(StreamInterface $stream): string
+    {
+        $content = '';
+        while (!$stream->eof() && strlen($content) <= self::MAX_BYTES) {
+            $chunk = $stream->read(self::CHUNK_BYTES);
+            if ($chunk === '') {
+                break;
+            }
+            $content .= $chunk;
+        }
+
+        return $content;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    private static function readResource($stream): string
+    {
+        $content = '';
+        while (!feof($stream) && strlen($content) <= self::MAX_BYTES) {
+            $chunk = fread($stream, self::CHUNK_BYTES);
+            if ($chunk === false || $chunk === '') {
+                break;
+            }
+            $content .= $chunk;
+        }
+
+        return $content;
     }
 
     /**
@@ -108,12 +128,12 @@ final class DocumentFile
         self::validateName($name);
 
         if (!is_file($path) || !is_readable($path)) {
-            throw new \InvalidArgumentException('O arquivo informado não existe ou não pode ser lido.');
+            throw new InvalidArgumentException('O arquivo informado não existe ou não pode ser lido.');
         }
 
         $handle = fopen($path, 'rb');
         if ($handle === false) {
-            throw new \InvalidArgumentException('Não foi possível ler o arquivo informado.');
+            throw new InvalidArgumentException('Não foi possível ler o arquivo informado.');
         }
 
         try {

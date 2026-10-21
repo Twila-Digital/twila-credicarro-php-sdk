@@ -28,22 +28,22 @@ final class RetryAfter
             return null;
         }
 
-        if (is_numeric($value)) {
-            $seconds = (float) $value;
-        } else {
-            $timestamp = strtotime($value);
-            if ($timestamp === false) {
-                return null;
-            }
-
-            $seconds = (float) ($timestamp - ($now ?? time()));
-        }
-
-        if (is_nan($seconds) || $seconds <= 0) {
+        $seconds = is_numeric($value) ? (float) $value : self::secondsUntil($value, $now);
+        if ($seconds === null || is_nan($seconds) || $seconds <= 0) {
             return null;
         }
 
         return min($seconds, (float) self::MAX_SECONDS);
+    }
+
+    /**
+     * Segundos até a data HTTP do cabeçalho (forma `Retry-After: <data>`); null se a data for inválida.
+     */
+    private static function secondsUntil(string $date, ?int $now): ?float
+    {
+        $timestamp = strtotime($date);
+
+        return $timestamp === false ? null : (float) ($timestamp - ($now ?? time()));
     }
 
     public static function milliseconds(?string $header, ?int $now = null): ?int

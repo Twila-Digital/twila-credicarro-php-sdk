@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Twila\Credicarro\Webhooks;
 
+use InvalidArgumentException;
+use SensitiveParameter;
 use Twila\Credicarro\Errors\CredicarroWebhookSignatureException;
 use Twila\Credicarro\Internal\Mapping\ProposalMapper;
 use Twila\Credicarro\Internal\Mapping\Wire;
@@ -31,7 +33,7 @@ final class CredicarroWebhookEvent
     public static function parse(
         string $rawBody,
         string $signatureHeader,
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $signingSecret,
         int $toleranceSeconds = self::DEFAULT_TOLERANCE_SECONDS
     ): ProposalWebhookEvent {
@@ -95,7 +97,7 @@ final class CredicarroWebhookEvent
     public static function verifySignature(
         string $rawBody,
         string $signatureHeader,
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $signingSecret,
         int $toleranceSeconds = self::DEFAULT_TOLERANCE_SECONDS,
         ?int $now = null
@@ -110,7 +112,7 @@ final class CredicarroWebhookEvent
      * @param int|string $timestamp o `t` do header, exatamente como recebido
      */
     public static function computeSignature(
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $signingSecret,
         $timestamp,
         string $rawBody
@@ -135,13 +137,13 @@ final class CredicarroWebhookEvent
     private static function signatureFailure(
         string $rawBody,
         string $signatureHeader,
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $signingSecret,
         int $toleranceSeconds,
         int $now
     ): ?string {
         if ($toleranceSeconds < 0) {
-            throw new \InvalidArgumentException('A tolerância do webhook deve ser maior ou igual a zero.');
+            throw new InvalidArgumentException('A tolerância do webhook deve ser maior ou igual a zero.');
         }
 
         if ($signingSecret === '') {
@@ -170,8 +172,9 @@ final class CredicarroWebhookEvent
      */
     private static function parseHeader(string $header): ?array
     {
-        $timestamp = null;
-        $signature = null;
+        // Formato de cada campo conhecido; os demais são ignorados.
+        $patterns = ['t' => '/^\d{1,10}$/', 'v1' => '/^[0-9a-fA-F]+$/'];
+        $fields = [];
 
         foreach (explode(',', $header) as $part) {
             $pieces = explode('=', $part, 2);
@@ -180,25 +183,21 @@ final class CredicarroWebhookEvent
             }
 
             $key = trim($pieces[0]);
-            $value = trim($pieces[1]);
-
-            if ($key === 't') {
-                if ($timestamp !== null || preg_match('/^\d{1,10}$/', $value) !== 1) {
-                    return null;
-                }
-                $timestamp = $value;
-            } elseif ($key === 'v1') {
-                if ($signature !== null || preg_match('/^[0-9a-fA-F]+$/', $value) !== 1) {
-                    return null;
-                }
-                $signature = $value;
+            if (!isset($patterns[$key])) {
+                continue;
             }
+
+            $value = trim($pieces[1]);
+            if (isset($fields[$key]) || preg_match($patterns[$key], $value) !== 1) {
+                return null;
+            }
+            $fields[$key] = $value;
         }
 
-        if ($timestamp === null || $signature === null) {
+        if (!isset($fields['t'], $fields['v1'])) {
             return null;
         }
 
-        return ['t' => $timestamp, 'v1' => $signature];
+        return ['t' => $fields['t'], 'v1' => $fields['v1']];
     }
 }

@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Twila\Credicarro\Config;
 
+use JsonSerializable;
+use LogicException;
 use Psr\SimpleCache\CacheInterface;
+use SensitiveParameter;
 use Twila\Credicarro\Internal\Auth\Credentials;
 
 /**
  * Opções do `CredicarroClient`. O `clientSecret` é guardado em um objeto interno mascarado: não há getter para ele
  * e ele não aparece em `var_dump`, `print_r`, `json_encode`, `serialize` nem stack traces.
  */
-final class ClientOptions implements \JsonSerializable
+final class ClientOptions implements JsonSerializable
 {
     /** @var Credentials */
     private $credentials;
@@ -36,7 +39,7 @@ final class ClientOptions implements \JsonSerializable
      */
     public function __construct(
         string $clientId,
-        #[\SensitiveParameter]
+        #[SensitiveParameter]
         string $clientSecret,
         string $environment = Environment::PRODUCTION,
         ?string $baseUrl = null,
@@ -113,15 +116,18 @@ final class ClientOptions implements \JsonSerializable
      */
     public function __serialize(): array
     {
-        throw new \LogicException('Este objeto guarda credenciais e não pode ser serializado.');
+        throw new LogicException('Este objeto guarda credenciais e não pode ser serializado.');
     }
 
     /**
+     * A assinatura exige $data: o método só recusa a desserialização.
+     *
      * @param array<string, mixed> $data
      * @psalm-suppress UnusedParam
+     * @SuppressWarnings("PHPMD.UnusedFormalParameter")
      */
     public function __unserialize(array $data): void
     {
-        throw new \LogicException('Este objeto guarda credenciais e não pode ser desserializado.');
+        throw new LogicException('Este objeto guarda credenciais e não pode ser desserializado.');
     }
 }
