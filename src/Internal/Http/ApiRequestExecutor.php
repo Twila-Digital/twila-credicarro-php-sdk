@@ -103,7 +103,6 @@ final class ApiRequestExecutor
         int $attemptTimeoutMs,
         ?int $budgetMs
     ): ApiResponse {
-        // A chave é definida UMA vez, fora do laço de tentativas: todas as tentativas usam a mesma.
         $idempotencyKey = $explicitKey;
         if (
             $idempotencyKey === null
@@ -115,8 +114,6 @@ final class ApiRequestExecutor
 
         $retrySafe = IdempotencyClassifier::isRetrySafe($method, $path, $idempotencyKey !== null);
 
-        // O corpo é serializado UMA vez (um documento de 10 MiB vira ~13 MiB de JSON): as tentativas e o replay do
-        // 401 reutilizam a mesma string.
         $encodedBody = $body === null ? null : json_encode($body);
         if ($encodedBody === false) {
             throw new InvalidArgumentException('Não foi possível serializar o corpo da requisição em JSON.');
@@ -145,8 +142,6 @@ final class ApiRequestExecutor
             return $response;
         }
 
-        // 401: o token pode ter sido revogado antes de `expira_em`. Renova e repete UMA vez (a requisição
-        // não foi processada, então repetir é seguro mesmo sem Idempotency-Key).
         $this->tokenProvider->invalidate($token);
         $newToken = $this->tokenProvider->getToken();
         $retried = $this->sendOnce($method, $path, $encodedBody, $idempotencyKey, $attemptTimeoutMs, $newToken);
@@ -167,8 +162,6 @@ final class ApiRequestExecutor
         #[SensitiveParameter]
         string $token
     ): ApiResponse {
-        // baseUrl sempre termina com "/" (garantido em ClientOptionsResolver) e path nunca começa com "/":
-        // concatenação direta evita a resolução de URI relativa (RFC 3986 §5.3) descartar o segmento "integration".
         $url = $this->baseUrl . $path;
 
         $headers = ['Authorization' => 'Bearer ' . $token];
@@ -181,7 +174,6 @@ final class ApiRequestExecutor
             'timeout' => $attemptTimeoutMs / 1000,
             'connect_timeout' => $attemptTimeoutMs / 1000,
             'http_errors' => false,
-            // Um 3xx nunca é seguido (levaria o Authorization para outro host): vira CredicarroApiException.
             'allow_redirects' => false,
         ];
 

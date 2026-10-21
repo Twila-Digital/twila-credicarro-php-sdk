@@ -59,7 +59,6 @@ final class AuthTest extends TestCase
     public function testExpiredTokenIsRenewedBeforeTheNextCall(): void
     {
         $h = TestClientFactory::harness([], null, false);
-        // Primeiro token já vem expirado (expira_em no passado): precisa ser renovado na chamada seguinte.
         $h->mock->append(
             TestClientFactory::tokenResponse('first-token', '2000-01-01T00:00:00+00:00'),
             TestClientFactory::json(200, self::WEBHOOKS_PAGE),
@@ -94,7 +93,6 @@ final class AuthTest extends TestCase
 
     public function testExpirySecondsFallbackLeavesA60SecondMargin(): void
     {
-        // expira_em_segundos = 30 (< 60 s de margem): o token nasce expirado e é renovado na chamada seguinte.
         $short = TestClientFactory::json(200, ['token_de_acesso' => 'short', 'expira_em_segundos' => 0]);
         $h = TestClientFactory::harness([], null, false);
         $h->mock->append(
@@ -241,12 +239,10 @@ final class AuthTest extends TestCase
 
         self::assertSame('token-1', $provider->getToken());
 
-        // Token rejeitado antigo (já substituído): não derruba o atual.
         $provider->invalidate('token-velho');
         self::assertSame('token-1', $provider->getToken());
         self::assertCount(1, $mock);
 
-        // Token rejeitado é o atual: o cache é descartado e um novo é gerado.
         $provider->invalidate('token-1');
         self::assertSame('token-2', $provider->getToken());
         self::assertCount(0, $mock);

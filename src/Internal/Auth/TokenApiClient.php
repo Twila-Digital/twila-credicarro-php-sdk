@@ -51,7 +51,6 @@ final class TokenApiClient
      */
     public function generate(Credentials $credentials): AccessToken
     {
-        // POST de token é seguro para repetição: não cria nenhum recurso.
         $response = $this->resilience->execute(true, function () use ($credentials): ApiResponse {
             $raw = $this->http->request('POST', $this->baseUrl . 'v1/authentication/accesstoken', [
                 'json' => $credentials->toTokenRequestBody(),

@@ -84,7 +84,7 @@ final class AccessTokenProvider
             try {
                 $this->cache->delete($this->cacheKey);
             } catch (\Throwable $ignored) {
-                // Cache indisponível: o próximo token gerado sobrescreve a entrada.
+                return;
             }
         }
     }
@@ -129,7 +129,7 @@ final class AccessTokenProvider
         try {
             $this->cache->set($this->cacheKey, ['v' => $token->value(), 'e' => $token->expiresAt()], $ttl);
         } catch (\Throwable $ignored) {
-            // Cache indisponível: o token continua válido em memória.
+            return;
         }
     }
 

@@ -55,8 +55,6 @@ final class HardeningTest extends TestCase
         'pagina' => ['tem_proximo' => false, 'tem_anterior' => false, 'numero' => 1, 'tamanho' => 10, 'total' => 0],
     ];
 
-    // ---- E1: circuit breaker -------------------------------------------------------------------
-
     public function testHalfOpenTrialEndedByNonNetworkExceptionDoesNotLockTheCircuit(): void
     {
         $options = new ResilienceOptions(5000, 1000, 60000, 1, 1, 0.5, 30000, 2, 150);
@@ -66,7 +64,7 @@ final class HardeningTest extends TestCase
         };
 
         $pipeline->execute(false, $ok);
-        $pipeline->execute(false, $ok); // abre o circuito
+        $pipeline->execute(false, $ok);
         usleep(200000);
 
         try {
@@ -75,7 +73,6 @@ final class HardeningTest extends TestCase
             });
             self::fail('Esperava DomainException.');
         } catch (\DomainException $e) {
-            // a tentativa de meia-abertura terminou sem veredito
         }
 
         $response = $pipeline->execute(false, function () {
@@ -116,12 +113,9 @@ final class HardeningTest extends TestCase
             self::assertSame(401, $e->getStatusCode());
         }
 
-        // O circuito não pode ter ficado preso na meia-abertura.
         $page = $h->client->webhooks->list();
         self::assertSame(0, $page->totalCount);
     }
-
-    // ---- Retry-After e orçamento -----------------------------------------------------------------
 
     public function testRetryAfterParsing(): void
     {
@@ -176,7 +170,6 @@ final class HardeningTest extends TestCase
             $h->client->webhooks->list();
             self::fail('Esperava CredicarroTimeoutException.');
         } catch (CredicarroTimeoutException $e) {
-            // ok
         }
 
         self::assertLessThan(1.5, microtime(true) - $started);
@@ -184,7 +177,6 @@ final class HardeningTest extends TestCase
 
     public function testDocumentUploadHasAWiderBudgetThanOtherCalls(): void
     {
-        // total 500 ms para chamadas comuns; upload: 600 ms por tentativa x 3 = 1800 ms de orçamento.
         $options = new ResilienceOptions(500, 500, 600, 3, 1);
         $upload = new ProposalDocumentUpload(
             ProposalParticipant::BUYER,
@@ -192,7 +184,6 @@ final class HardeningTest extends TestCase
             DocumentFile::fromBytes('%PDF-1.7 x', 'cnh.pdf')
         );
 
-        // Chamada comum: Retry-After de 1 s não cabe nos 500 ms -> falha na hora.
         $common = TestClientFactory::harness([
             TestClientFactory::json(503, [], ['Retry-After' => '1']),
             TestClientFactory::json(200, self::PAGE),
@@ -205,7 +196,6 @@ final class HardeningTest extends TestCase
         }
         self::assertCount(1, $common->apiRequests());
 
-        // Upload: o mesmo Retry-After cabe no orçamento de 1800 ms -> espera e repete com a mesma chave.
         $h = TestClientFactory::harness([
             TestClientFactory::json(503, [], ['Retry-After' => '1']),
             new Response(204),
@@ -217,8 +207,6 @@ final class HardeningTest extends TestCase
         self::assertSame('chave-upload', $requests[1]->getHeaderLine('Idempotency-Key'));
         self::assertSame((string) $requests[0]->getBody(), (string) $requests[1]->getBody());
     }
-
-    // ---- Redirects ---------------------------------------------------------------------------------
 
     public function testRedirectsAreDisabledOnApiAndTokenClients(): void
     {
@@ -254,8 +242,6 @@ final class HardeningTest extends TestCase
         self::assertSame([false, false], $seen);
     }
 
-    // ---- Token -------------------------------------------------------------------------------------
-
     public function testTokenExpiryWithoutExpiraEmFollowsTheHalfOrMinusSixtyRule(): void
     {
         $now = 1000;
@@ -270,8 +256,6 @@ final class HardeningTest extends TestCase
             TokenApiClient::expiresAt(['expira_em' => '2030-01-01T00:00:00+00:00', 'expira_em_segundos' => 10], $now)
         );
     }
-
-    // ---- Cache PSR-16 do token ---------------------------------------------------------------------
 
     /**
      * @param array<string, mixed> $store
@@ -339,7 +323,6 @@ final class HardeningTest extends TestCase
         ], $cache);
         $first->client->webhooks->list();
 
-        // Outro "processo" (nova instância do cliente) reaproveita o token do cache: nenhuma chamada de token.
         $second = $this->clientWithCache([TestClientFactory::json(200, self::PAGE)], $cache);
         $second->client->webhooks->list();
 
@@ -444,8 +427,6 @@ final class HardeningTest extends TestCase
         self::assertCount(1, $second->tokenRequests());
     }
 
-    // ---- E4: segredos e PII --------------------------------------------------------------------------
-
     public function testClientSecretNeverAppearsInStackTraces(): void
     {
         $previous = ini_set('zend.exception_ignore_args', '0');
@@ -536,7 +517,7 @@ final class HardeningTest extends TestCase
             $refused = false;
             try {
                 serialize($object);
-            } catch (\Exception $e) { // LogicException do SDK ou "Serialization of Closure" do PHP
+            } catch (\Exception $e) {
                 $refused = true;
                 self::assertStringNotContainsString(self::SECRET, $e->getMessage());
             }
@@ -728,8 +709,6 @@ final class HardeningTest extends TestCase
         self::assertSame('123.456.789-01', $summary->buyerCpf);
     }
 
-    // ---- Idempotency-Key -----------------------------------------------------------------------------
-
     /**
      * @dataProvider invalidKeysProvider
      */
@@ -776,8 +755,6 @@ final class HardeningTest extends TestCase
         self::assertCount(2, $h->apiRequests());
     }
 
-    // ---- Webhook -------------------------------------------------------------------------------------
-
     public function testVerifyAuthorizationHandlesDifferentLengths(): void
     {
         self::assertFalse(CredicarroWebhookEvent::verifyAuthorization('curto', 'Bearer muito-mais-longo-que-o-curto'));
@@ -813,8 +790,6 @@ final class HardeningTest extends TestCase
             'path' => ['{"id_proposta":"../../etc","enum_status":1}'],
         ];
     }
-
-    // ---- DocumentFile --------------------------------------------------------------------------------
 
     public function testDocumentFileConstructionIsAlwaysValidated(): void
     {
@@ -860,8 +835,6 @@ final class HardeningTest extends TestCase
             unlink($path);
         }
     }
-
-    // ---- Item 16: erros do endpoint de token ---------------------------------------------------------
 
     /**
      * @dataProvider tokenAuthFailuresProvider
@@ -917,8 +890,6 @@ final class HardeningTest extends TestCase
             '503' => [503, 'Indisponivel'],
         ];
     }
-
-    // ---- Dependências -------------------------------------------------------------------------------
 
     public function testInstalledGuzzleIsNotAVulnerableVersion(): void
     {

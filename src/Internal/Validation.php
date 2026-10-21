@@ -57,7 +57,6 @@ final class Validation
             return null;
         }
 
-        // 1 a 200 caracteres ASCII imprimíveis (0x20-0x7E), não só espaços. Vazia nunca vale como "sem chave".
         if (
             strlen($key) > 200
             || trim($key) === ''

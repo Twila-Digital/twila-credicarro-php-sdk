@@ -130,7 +130,6 @@ JSON;
             300,
             self::DOC_TIMESTAMP
         ));
-        // Reformatar o JSON (espaços) também invalida o hash: a validação é sobre o corpo bruto.
         self::assertFalse(CredicarroWebhookEvent::verifySignature(
             str_replace(',', ', ', self::DOC_BODY),
             $header,
@@ -156,7 +155,6 @@ JSON;
     public function testEmptySecretIsAlwaysInvalid(): void
     {
         $body = self::DOC_BODY;
-        // Mesmo uma assinatura calculada com segredo vazio não pode ser aceita.
         $header = sprintf(
             't=%d,v1=%s',
             self::DOC_TIMESTAMP,
@@ -214,13 +212,10 @@ JSON;
     {
         $header = 't=1715792400,v1=' . self::DOC_SIGNATURE;
 
-        // Dentro da tolerância (5 min = 300 s), antes e depois.
         self::assertTrue($this->verifyAt($header, 300, 1715792400 + 300));
         self::assertTrue($this->verifyAt($header, 300, 1715792400 - 300));
-        // Fora: replay antigo e timestamp no futuro.
         self::assertFalse($this->verifyAt($header, 300, 1715792400 + 301));
         self::assertFalse($this->verifyAt($header, 300, 1715792400 - 301));
-        // Tolerância ajustável.
         self::assertTrue($this->verifyAt($header, 3600, 1715792400 + 3000));
     }
 

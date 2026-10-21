@@ -49,7 +49,6 @@ final class ClientOptionsResolver
             return;
         }
 
-        // Sem baseUrl, o ambiente precisa ser conhecido: Environment::baseUrl lança para valor inválido.
         Environment::baseUrl($options->getEnvironment());
     }
 

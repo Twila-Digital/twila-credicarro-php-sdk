@@ -161,7 +161,6 @@ final class ResilienceTest extends TestCase
             self::fail('Esperava CredicarroTimeoutException.');
         } catch (CredicarroTimeoutException $e) {
             self::assertSame(3, $calls);
-            // A causa é sanitizada: sem o objeto de requisição/resposta do Guzzle.
             self::assertNotInstanceOf(ConnectException::class, $e->getPrevious());
             self::assertSame('ConnectException (código 0)', ($e->getPrevious())->getMessage());
         }
@@ -195,7 +194,6 @@ final class ResilienceTest extends TestCase
 
     public function testTotalTimeoutRaisesTimeoutException(): void
     {
-        // Orçamento de 10 ms e uma tentativa que demora mais: sem tempo restante não há nova tentativa.
         $pipeline = new ResiliencePipeline(new ResilienceOptions(10, 10, 60000, 5, 1));
         $calls = 0;
 

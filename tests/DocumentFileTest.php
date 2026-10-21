@@ -150,7 +150,6 @@ final class DocumentFileTest extends TestCase
             self::assertSame('cnh.pdf', $withOverride->fileName);
             self::assertSame(base64_encode('arquivo-em-disco'), $withOverride->base64Content);
 
-            // O nome temporário não tem extensão válida: sem override, a validação de extensão falha.
             $this->expectException(CredicarroValidationException::class);
             DocumentFile::fromFile($path);
         } finally {

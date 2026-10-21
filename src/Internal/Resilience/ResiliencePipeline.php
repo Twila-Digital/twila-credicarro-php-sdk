@@ -84,8 +84,6 @@ final class ResiliencePipeline
     private function awaitNetworkRetry(Throwable $error, bool $canRetry, int $attemptNumber, float $deadline): void
     {
         if (!TransientFailureClassifier::isNetworkError($error)) {
-            // Qualquer exceção que não seja falha de rede (401 persistente, erro do token, bug) encerra o
-            // teste de meia-abertura: sem isso o circuito ficaria preso para sempre.
             $this->circuitBreaker->release();
             throw $error;
         }
@@ -123,7 +121,6 @@ final class ResiliencePipeline
 
         $retryAfter = RetryAfter::seconds($response->header('retry-after'));
         if ($retryAfter !== null && $retryAfter > $remaining) {
-            // Esperar além do orçamento seria inútil: devolve já (o chamador lança o erro com o Retry-After).
             return null;
         }
 

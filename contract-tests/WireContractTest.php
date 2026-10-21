@@ -218,7 +218,6 @@ final class WireContractTest extends TestCase
     {
         $path = (string) preg_replace('#^/integration#', '', $requestPath);
 
-        // Rotas literais vencem as parametrizadas (ex.: /v1/proposal/simulation x /v1/proposal/{propostaId}).
         $matches = [];
         foreach (self::spec()['paths'] as $template => $item) {
             $regex = '#^' . preg_replace('#\\\\\{[^}]+\\\\\}#', '[^/]+', preg_quote((string) $template, '#')) . '$#';
@@ -454,7 +453,6 @@ final class WireContractTest extends TestCase
         $operation = $spec['paths'][$templatePath][strtolower($method)] ?? null;
         self::assertIsArray($operation, "Operação {$expectedOperation} não existe no openapi.yaml.");
 
-        // Resposta de sucesso sintetizada a partir do schema da própria operação.
         $successStatus = 200;
         $responseSchema = null;
         foreach ($operation['responses'] as $status => $definition) {
@@ -479,7 +477,6 @@ final class WireContractTest extends TestCase
             $read = Wire::stopRecording();
         }
 
-        // ---- requisição de API -------------------------------------------------------------------
         $request = $harness->lastApiRequest();
         $found = self::operation($request->getMethod(), $request->getUri()->getPath());
         self::assertNotNull($found, 'O SDK chamou uma rota que não existe no openapi.yaml: ' . $request->getUri()->getPath());
@@ -496,7 +493,6 @@ final class WireContractTest extends TestCase
             self::assertSame('', (string) $request->getBody(), 'A operação não tem corpo, mas o SDK enviou um.');
         }
 
-        // ---- resposta lida pelos mappers ---------------------------------------------------------
         $allowed = self::allPropertyNames($spec['components']['schemas']['authenticationResponse']);
         $mustRead = [];
         if ($responseSchema !== null) {

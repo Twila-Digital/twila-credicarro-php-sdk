@@ -32,11 +32,10 @@ printf("%d proposta(s) no total (página %d)%s", $page->totalCount, $page->page,
 foreach ($page->items as $summary) {
     printf("#%d %s - %s%s", $summary->number, $summary->id, (string) $summary->statusName, PHP_EOL);
 
-    // O que o seu sistema ainda precisa enviar para a proposta avançar (consulta v2).
     try {
         $details = $client->proposals->get($summary->id);
     } catch (CredicarroApiException $e) {
-        continue; // propostas criadas pela v1 não têm retrato v2 (Proposal.Access.NotIntegrationV2)
+        continue;
     }
 
     foreach ($details->getPendingActions() as $action) {

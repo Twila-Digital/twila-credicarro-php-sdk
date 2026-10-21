@@ -130,7 +130,6 @@ final class CredicarroWebhookEvent
             return false;
         }
 
-        // Compara os SHA-256 dos dois valores: tamanhos diferentes não vazam pelo tempo de resposta.
         return hash_equals(hash('sha256', $expectedHeader, true), hash('sha256', $receivedHeader, true));
     }
 
@@ -172,7 +171,6 @@ final class CredicarroWebhookEvent
      */
     private static function parseHeader(string $header): ?array
     {
-        // Formato de cada campo conhecido; os demais são ignorados.
         $patterns = ['t' => '/^\d{1,10}$/', 'v1' => '/^[0-9a-fA-F]+$/'];
         $fields = [];
 
