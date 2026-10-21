@@ -1,0 +1,17 @@
+{
+    "name": "twila/credicarro-sample-slim",
+    "type": "project",
+    "license": "MIT",
+    "private": true,
+    "repositories": [
+        { "type": "path", "url": "../.." }
+    ],
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "twila/credicarro": "*",
+        "slim/slim": "^4.14",
+        "slim/psr7": "^1.7"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

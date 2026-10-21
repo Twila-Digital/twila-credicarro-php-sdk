@@ -1,0 +1,61 @@
+name: Security
+
+# O CodeQL não suporta PHP como linguagem (confirmado em set/2026 — "Did not
+# recognize the following languages: php"). Alternativa equivalente: Psalm com
+# taint analysis (dataflow de segurança, output SARIF nativo, publicado no mesmo
+# lugar que o CodeQL usaria) + `composer audit` para vulnerabilidades conhecidas
+# nas dependências.
+
+on:
+  push:
+    branches: [production]
+  pull_request:
+    branches: [production]
+  schedule:
+    - cron: '17 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  psalm-taint-analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:2.8.12
+          coverage: none
+
+      - run: composer install --no-interaction --no-progress
+
+      - run: vendor/bin/psalm --taint-analysis --output-format=sarif --report=results.sarif
+
+      - name: Merge SARIF runs
+        run: php scripts/merge-sarif-runs.php results.sarif
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+          category: security-psalm
+
+  composer-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:2.8.12
+          coverage: none
+
+      - run: composer install --no-interaction --no-progress
+
+      - run: composer audit

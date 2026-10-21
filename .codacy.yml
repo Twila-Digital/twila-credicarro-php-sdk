@@ -1,0 +1,5 @@
+exclude_paths:
+  - "vendor/**"
+  - "samples/**"
+  - "contract-tests/**"
+  - "tests/**"

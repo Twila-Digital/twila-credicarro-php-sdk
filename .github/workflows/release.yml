@@ -1,0 +1,35 @@
+name: Release
+
+# O Packagist não tem um fluxo de publish via CI — ele sincroniza a tag sozinho via
+# webhook do GitHub, independente deste workflow (ver CONTRIBUTING.md). Este workflow
+# serve só como gate de qualidade (CI + contract tests) e para criar o GitHub Release.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  contract-tests:
+    needs: ci
+    uses: ./.github/workflows/contract-tests.yml
+
+  github-release:
+    needs: [ci, contract-tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
