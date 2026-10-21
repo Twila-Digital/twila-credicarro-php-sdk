@@ -13,8 +13,7 @@ final class DocumentFileTest extends TestCase
 {
     public function testFromBytesEncodesPureBase64(): void
     {
-        $file = DocumentFile::fromBytes("%PDF-1.7
- conteúdo", 'cnh-comprador.pdf');
+        $file = DocumentFile::fromBytes("%PDF-1.7\n conteúdo", 'cnh-comprador.pdf');
 
         self::assertSame('cnh-comprador.pdf', $file->fileName);
         self::assertSame(base64_encode("%PDF-1.7\n conteúdo"), $file->base64Content);
