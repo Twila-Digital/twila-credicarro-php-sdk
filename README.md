@@ -111,7 +111,8 @@ $opcoes = $client->simulations->createFinancing(new CreateFinancingSimulationReq
     5000.0,          // entrada
     'SP',            // UF do registro
     false,           // veículo zero km?
-    '11222333000181' // CNPJ da loja de integração
+    '11222333000181', // CNPJ da loja de integração
+    null             // retornoComissao: opcional, dentro da faixa configurada na loja (ver getCommissionReturns)
 ));
 
 // 3. Proposta a partir da opção escolhida
@@ -131,7 +132,7 @@ Os valores do cliente (nome, CPF, endereço) precisam bater com os documentos en
 | Cliente | Métodos |
 | --- | --- |
 | `$client->customers` | `upsert`, `create`, `upsertAddress`, `upsertProfessionalData` |
-| `$client->simulations` | `getFinancingRange`, `getRefinancingRange`, `createFinancing`, `createRefinancing`, `get`, `list` |
+| `$client->simulations` | `getFinancingRange`, `getRefinancingRange`, `getCommissionReturns`, `createFinancing`, `createRefinancing`, `get`, `list` |
 | `$client->proposals` | `create`, `get`, `list`, `sendVehicleDetails`, `sendDepositAccount`, `uploadDocument` |
 | `$client->webhooks` | `create`, `list`, `update`, `delete` |
 | `$client->v1->simulations` | `getFinancingRange`, `getRefinancingRange`, `createFinancing`, `createRefinancing` (rotas v1, sem `cnpjLoja`) |
