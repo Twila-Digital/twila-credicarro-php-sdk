@@ -54,6 +54,25 @@ final class SimulationsClient
     }
 
     /**
+     * Retornos de comissão configurados para a loja, por tipo de simulação
+     * (`GET v2/proposal/simulation/commission-returns`). Use um dos valores devolvidos em `commissionReturn`
+     * ao criar a simulação.
+     *
+     * @return array<int, CommissionReturn>
+     */
+    public function getCommissionReturns(string $storeCnpj): array
+    {
+        $path = (new QueryStringBuilder())
+            ->add('cnpjLoja', Validation::requireNotBlank($storeCnpj, 'cnpjLoja'))
+            ->build('v2/proposal/simulation/commission-returns');
+
+        $response = $this->executor->get($path);
+        ApiRequestExecutor::ensureSuccess($response);
+
+        return SimulationMapper::commissionReturnsFromWire(ResponseReader::object($response));
+    }
+
+    /**
      * Cria a simulação de financiamento (`POST v2/proposal/simulation/financing`), uma opção por prazo.
      * O cliente precisa estar cadastrado. `storeCnpj` é obrigatório. Recebe Idempotency-Key automática.
      *
