@@ -10,9 +10,13 @@ use Twila\Credicarro\Internal\Http\ResponseReader;
 use Twila\Credicarro\Internal\Mapping\SimulationMapper;
 use Twila\Credicarro\Internal\Validation;
 use Twila\Credicarro\Simulations\CreateFinancingSimulationRequest;
+use Twila\Credicarro\Simulations\CreateFinancingWithoutCpfRequest;
 use Twila\Credicarro\Simulations\CreateRefinancingSimulationRequest;
+use Twila\Credicarro\Simulations\CreateRefinancingWithoutCpfRequest;
 use Twila\Credicarro\Simulations\FinancingRangeOption;
+use Twila\Credicarro\Simulations\FinancingWithoutCpfOption;
 use Twila\Credicarro\Simulations\RefinancingRangeOption;
+use Twila\Credicarro\Simulations\RefinancingWithoutCpfOption;
 use Twila\Credicarro\Simulations\SimulationOption;
 
 /**
@@ -72,6 +76,24 @@ final class V1SimulationsClient
     }
 
     /**
+     * `POST v1/proposal/simulation/financing/without-cpf`. Calcula as parcelas só com placa, valor do veículo e UF, sem
+     * CPF nem cadastro de cliente. Nada é gravado (as opções não têm `simulationId` e não servem para criar proposta).
+     * Não recebe Idempotency-Key e é seguro repetir.
+     *
+     * @return array<int, FinancingWithoutCpfOption>
+     */
+    public function createFinancingWithoutCpf(CreateFinancingWithoutCpfRequest $request): array
+    {
+        $response = $this->executor->post(
+            'v1/proposal/simulation/financing/without-cpf',
+            SimulationMapper::financingWithoutCpfRequestToWire($request)
+        );
+        ApiRequestExecutor::ensureSuccess($response);
+
+        return SimulationMapper::financingWithoutCpfOptionsFromWire(ResponseReader::object($response));
+    }
+
+    /**
      * `POST v1/proposal/simulation/refinancing`. Recebe Idempotency-Key automática.
      *
      * @return array<int, SimulationOption>
@@ -92,5 +114,23 @@ final class V1SimulationsClient
         return (new QueryStringBuilder())
             ->add('placa', Validation::requireNotBlank($licensePlate, 'placa'))
             ->build('v1/proposal/simulation/range/' . $kind);
+    }
+
+    /**
+     * `POST v1/proposal/simulation/refinancing/without-cpf`. Calcula as parcelas do refinanciamento só com placa, valor
+     * solicitado e UF, sem CPF nem cadastro de cliente. Nada é gravado (as opções não têm `simulationId` e não servem
+     * para criar proposta). Não recebe Idempotency-Key e é seguro repetir.
+     *
+     * @return array<int, RefinancingWithoutCpfOption>
+     */
+    public function createRefinancingWithoutCpf(CreateRefinancingWithoutCpfRequest $request): array
+    {
+        $response = $this->executor->post(
+            'v1/proposal/simulation/refinancing/without-cpf',
+            SimulationMapper::refinancingWithoutCpfRequestToWire($request)
+        );
+        ApiRequestExecutor::ensureSuccess($response);
+
+        return SimulationMapper::refinancingWithoutCpfOptionsFromWire(ResponseReader::object($response));
     }
 }

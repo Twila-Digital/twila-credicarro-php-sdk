@@ -24,7 +24,9 @@ use Twila\Credicarro\Proposals\ProposalDocumentUpload;
 use Twila\Credicarro\Proposals\ProposalParticipant;
 use Twila\Credicarro\Proposals\VehicleDetails;
 use Twila\Credicarro\Simulations\CreateFinancingSimulationRequest;
+use Twila\Credicarro\Simulations\CreateFinancingWithoutCpfRequest;
 use Twila\Credicarro\Simulations\CreateRefinancingSimulationRequest;
+use Twila\Credicarro\Simulations\CreateRefinancingWithoutCpfRequest;
 use Twila\Credicarro\Tests\TestClientFactory;
 use Twila\Credicarro\Webhooks\CreateWebhookRequest;
 use Twila\Credicarro\Webhooks\UpdateWebhookRequest;
@@ -425,6 +427,16 @@ final class WireContractTest extends TestCase
             'v1.simulations.createFinancing' => ['POST /v1/proposal/simulation/financing', static function (CredicarroClient $c) {
                 return $c->v1->simulations->createFinancing(
                     new CreateFinancingSimulationRequest('12345678909', 'ABC1D23', 45000.0, 5000.0, 'SP', true)
+                );
+            }],
+            'v1.simulations.createFinancingWithoutCpf' => ['POST /v1/proposal/simulation/financing/without-cpf', static function (CredicarroClient $c) {
+                return $c->v1->simulations->createFinancingWithoutCpf(
+                    new CreateFinancingWithoutCpfRequest('ABC1D23', 45000.0, 'SP', 5000.0)
+                );
+            }],
+            'v1.simulations.createRefinancingWithoutCpf' => ['POST /v1/proposal/simulation/refinancing/without-cpf', static function (CredicarroClient $c) {
+                return $c->v1->simulations->createRefinancingWithoutCpf(
+                    new CreateRefinancingWithoutCpfRequest('ABC1D23', 25000.0, 'SP')
                 );
             }],
             'v1.simulations.createRefinancing' => ['POST /v1/proposal/simulation/refinancing', static function (CredicarroClient $c) {
