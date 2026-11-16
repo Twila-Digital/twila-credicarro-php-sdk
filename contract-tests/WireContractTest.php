@@ -29,6 +29,7 @@ use Twila\Credicarro\Tests\TestClientFactory;
 use Twila\Credicarro\Webhooks\CreateWebhookRequest;
 use Twila\Credicarro\Webhooks\UpdateWebhookRequest;
 use Twila\Credicarro\Webhooks\WebhookAuthenticationType;
+use Twila\Credicarro\Webhooks\WebhookDeliveryFilter;
 use Twila\Credicarro\Webhooks\WebhookStatus;
 use Twila\Credicarro\Webhooks\WebhookType;
 
@@ -356,14 +357,17 @@ final class WireContractTest extends TestCase
             'simulations.getRefinancingRange' => ['GET /v2/proposal/simulation/range/refinancing', static function (CredicarroClient $c) {
                 return $c->simulations->getRefinancingRange('ABC1D23', '11222333000181');
             }],
+            'simulations.getCommissionReturns' => ['GET /v2/proposal/simulation/commission-returns', static function (CredicarroClient $c) {
+                return $c->simulations->getCommissionReturns('11222333000181');
+            }],
             'simulations.createFinancing' => ['POST /v2/proposal/simulation/financing', static function (CredicarroClient $c) {
                 return $c->simulations->createFinancing(
-                    new CreateFinancingSimulationRequest('12345678909', 'ABC1D23', 45000.0, 5000.0, 'SP', false, '11222333000181')
+                    new CreateFinancingSimulationRequest('12345678909', 'ABC1D23', 45000.0, 5000.0, 'SP', false, '11222333000181', 2)
                 );
             }],
             'simulations.createRefinancing' => ['POST /v2/proposal/simulation/refinancing', static function (CredicarroClient $c) {
                 return $c->simulations->createRefinancing(
-                    new CreateRefinancingSimulationRequest('12345678909', 'ABC1D23', 25000.0, '11222333000181')
+                    new CreateRefinancingSimulationRequest('12345678909', 'ABC1D23', 25000.0, '11222333000181', 2)
                 );
             }],
             'simulations.get' => ['GET /v1/proposal/simulation/{simulacaoId}', static function (CredicarroClient $c) {
@@ -415,6 +419,20 @@ final class WireContractTest extends TestCase
             }],
             'webhooks.delete' => ['DELETE /v1/webhook/{webhookId}', static function (CredicarroClient $c) {
                 $c->webhooks->delete(self::UUID);
+            }],
+            'webhooks.listDeliveries' => ['GET /v1/webhook/audit', static function (CredicarroClient $c) use ($paging) {
+                return $c->webhooks->listDeliveries(
+                    new WebhookDeliveryFilter('2026-11-01', '2026-11-05', self::UUID, self::UUID, '12345', 200),
+                    $paging
+                );
+            }],
+            'webhooks.getDeliveryChart' => ['GET /v1/webhook/audit/chart', static function (CredicarroClient $c) {
+                return $c->webhooks->getDeliveryChart(
+                    new WebhookDeliveryFilter('2026-11-01', '2026-11-05', self::UUID, self::UUID, '12345', 200)
+                );
+            }],
+            'webhooks.resend' => ['POST /v1/webhook/audit/{auditWebhookId}/resend', static function (CredicarroClient $c) {
+                return $c->webhooks->resend(self::UUID);
             }],
             'v1.simulations.getFinancingRange' => ['GET /v1/proposal/simulation/range/financing', static function (CredicarroClient $c) {
                 return $c->v1->simulations->getFinancingRange('ABC1D23');

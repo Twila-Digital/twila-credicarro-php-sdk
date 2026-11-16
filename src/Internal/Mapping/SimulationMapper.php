@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Twila\Credicarro\Internal\Mapping;
 
+use Twila\Credicarro\Simulations\CommissionReturn;
+use Twila\Credicarro\Simulations\CommissionReturnTarget;
 use Twila\Credicarro\Simulations\CreateFinancingSimulationRequest;
 use Twila\Credicarro\Simulations\CreateRefinancingSimulationRequest;
 use Twila\Credicarro\Simulations\FinancingRangeOption;
@@ -38,6 +40,9 @@ final class SimulationMapper
 
         if ($withStore) {
             $wire['cnpjLoja'] = $request->storeCnpj;
+            if ($request->commissionReturn !== null) {
+                $wire['retornoComissao'] = $request->commissionReturn;
+            }
         }
 
         return $wire;
@@ -56,9 +61,36 @@ final class SimulationMapper
 
         if ($withStore) {
             $wire['cnpjLoja'] = $request->storeCnpj;
+            if ($request->commissionReturn !== null) {
+                $wire['retornoComissao'] = $request->commissionReturn;
+            }
         }
 
         return $wire;
+    }
+
+    /**
+     * @param array<mixed> $wire
+     * @return array<int, CommissionReturn>
+     */
+    public static function commissionReturnsFromWire(array $wire): array
+    {
+        $items = [];
+        foreach (Wire::objects($wire, 'retornos_comissao') as $item) {
+            $type = Wire::nullableString($item, 'tipo');
+            $target = Wire::nullableString($item, 'alvo');
+            $items[] = new CommissionReturn(
+                SimulationType::fromWireName($type),
+                $type,
+                CommissionReturnTarget::fromWireName($target),
+                $target,
+                Wire::int($item, 'retorno_minimo'),
+                Wire::int($item, 'retorno_maximo'),
+                Wire::bool($item, 'permite_taxa_padrao')
+            );
+        }
+
+        return $items;
     }
 
     /**
