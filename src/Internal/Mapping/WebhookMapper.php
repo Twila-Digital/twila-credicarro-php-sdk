@@ -11,7 +11,6 @@ use Twila\Credicarro\Webhooks\UpdateWebhookRequest;
 use Twila\Credicarro\Webhooks\Webhook;
 use Twila\Credicarro\Webhooks\WebhookAuthenticationType;
 use Twila\Credicarro\Webhooks\WebhookDelivery;
-use Twila\Credicarro\Webhooks\WebhookDeliveryChartPoint;
 use Twila\Credicarro\Webhooks\WebhookDeliveryFilter;
 use Twila\Credicarro\Webhooks\WebhookResendResult;
 use Twila\Credicarro\Webhooks\WebhookStatus;
@@ -90,27 +89,6 @@ final class WebhookMapper
             Wire::nullableInt($wire, 'status_http'),
             Wire::string($wire, 'data_criacao')
         );
-    }
-
-    /**
-     * @param mixed $body
-     * @return array<int, WebhookDeliveryChartPoint>
-     */
-    public static function deliveryChartFromWire($body): array
-    {
-        $points = [];
-        foreach (is_array($body) ? $body : [] as $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-            $points[] = new WebhookDeliveryChartPoint(
-                Wire::string($item, 'rotulo'),
-                Wire::int($item, 'sucessos'),
-                Wire::int($item, 'erros')
-            );
-        }
-
-        return $points;
     }
 
     /**

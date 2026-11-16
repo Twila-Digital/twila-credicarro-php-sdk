@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Twila\Credicarro\Webhooks;
 
 /**
- * Filtros do histórico (`listDeliveries`) e do gráfico (`getDeliveryChart`) de envios. Campos `null` não são enviados.
+ * Filtros do histórico de envios (`listDeliveries`). Campos `null` não são enviados.
  *
  * As datas são texto ISO-8601: uma data sem horário (`2026-11-05`) vale pelo dia inteiro; com horário, informe o fuso
- * (`2026-11-05T14:00:00-03:00`). No gráfico, o período é obrigatório e pode ter até 31 dias.
+ * (`2026-11-05T14:00:00-03:00`).
  */
 final class WebhookDeliveryFilter
 {

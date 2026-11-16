@@ -96,24 +96,6 @@ final class WebhooksClient
     }
 
     /**
-     * Sucessos e erros por intervalo, no horário de Brasília (`GET v1/webhook/audit/chart`). `initialDate` e
-     * `finalDate` são obrigatórios, e o período pode ter até 31 dias.
-     *
-     * @return array<int, WebhookDeliveryChartPoint>
-     */
-    public function getDeliveryChart(WebhookDeliveryFilter $filter): array
-    {
-        Validation::requireNotBlank($filter->initialDate, 'data_inicial');
-        Validation::requireNotBlank($filter->finalDate, 'data_final');
-
-        $path = WebhookMapper::deliveryFilterToQuery(new QueryStringBuilder(), $filter)->build('v1/webhook/audit/chart');
-        $response = $this->executor->get($path);
-        ApiRequestExecutor::ensureSuccess($response);
-
-        return WebhookMapper::deliveryChartFromWire($response->body);
-    }
-
-    /**
      * Reenvia para a sua URL o mesmo corpo de um envio do histórico (`POST v1/webhook/audit/{id}/resend`).
      *
      * Uma única tentativa: o SDK NÃO repete a chamada (repetir dispararia o webhook de novo). O reenvio chega com uma

@@ -149,7 +149,7 @@ Os valores do cliente (nome, CPF, endereço) precisam bater com os documentos en
 | `$client->customers` | `upsert`, `create`, `upsertAddress`, `upsertProfessionalData` |
 | `$client->simulations` | `getFinancingRange`, `getRefinancingRange`, `getCommissionReturns`, `createFinancing`, `createRefinancing`, `get`, `list` |
 | `$client->proposals` | `create`, `get`, `list`, `sendVehicleDetails`, `sendDepositAccount`, `uploadDocument` |
-| `$client->webhooks` | `create`, `list`, `update`, `delete`, `listDeliveries`, `getDeliveryChart`, `resend` |
+| `$client->webhooks` | `create`, `list`, `update`, `delete`, `listDeliveries`, `resend` |
 | `$client->v1->simulations` | `getFinancingRange`, `getRefinancingRange`, `createFinancing`, `createRefinancing` (rotas v1, sem `cnpjLoja`) |
 | `$client->v1->proposals` | `create`, `get` (rotas v1) |
 
@@ -286,7 +286,7 @@ $resultado = $client->webhooks->create(new CreateWebhookRequest(
 $segredo = $resultado->signingSecret;
 ```
 
-Histórico, gráfico e reenvio:
+Histórico e reenvio:
 
 ```php
 use Twila\Credicarro\ListRequest;
@@ -297,9 +297,6 @@ $falhas = $client->webhooks->listDeliveries(
     new WebhookDeliveryFilter('2026-11-01', '2026-11-07', null, null, null, 500),
     new ListRequest(1, 20)
 );
-
-// Sucessos e erros por intervalo (período obrigatório, até 31 dias; rótulos no horário de Brasília)
-$grafico = $client->webhooks->getDeliveryChart(new WebhookDeliveryFilter('2026-11-01', '2026-11-07'));
 
 // Reenvia o mesmo corpo para a sua URL depois de corrigir a falha
 $resultado = $client->webhooks->resend($falhas->items[0]->id);

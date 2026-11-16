@@ -103,32 +103,6 @@ final class WebhookDeliveriesTest extends TestCase
         self::assertSame('pagina_inicial=1&limite=10', $h->lastApiRequest()->getUri()->getQuery());
     }
 
-    public function testGetDeliveryChartSendsPeriodAndMapsPoints(): void
-    {
-        $h = TestClientFactory::harness([TestClientFactory::json(200, [
-            ['rotulo' => '04', 'sucessos' => 42, 'erros' => 0],
-            ['rotulo' => '05', 'sucessos' => 38, 'erros' => 3],
-        ])]);
-
-        $points = $h->client->webhooks->getDeliveryChart(new WebhookDeliveryFilter('2026-11-04', '2026-11-05'));
-
-        $request = $h->lastApiRequest();
-        self::assertSame('/integration/v1/webhook/audit/chart', $request->getUri()->getPath());
-        self::assertSame('data_inicial=2026-11-04&data_final=2026-11-05', $request->getUri()->getQuery());
-        self::assertCount(2, $points);
-        self::assertSame('05', $points[1]->label);
-        self::assertSame(38, $points[1]->successCount);
-        self::assertSame(3, $points[1]->errorCount);
-    }
-
-    public function testGetDeliveryChartRequiresThePeriod(): void
-    {
-        $h = TestClientFactory::harness([]);
-
-        $this->expectException(CredicarroValidationException::class);
-        $h->client->webhooks->getDeliveryChart(new WebhookDeliveryFilter('2026-11-04'));
-    }
-
     public function testResendPostsWithoutBodyOrIdempotencyKey(): void
     {
         $h = TestClientFactory::harness([TestClientFactory::json(200, ['status_http' => null, 'resposta' => ''])]);

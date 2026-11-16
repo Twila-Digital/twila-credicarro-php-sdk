@@ -426,11 +426,6 @@ final class WireContractTest extends TestCase
                     $paging
                 );
             }],
-            'webhooks.getDeliveryChart' => ['GET /v1/webhook/audit/chart', static function (CredicarroClient $c) {
-                return $c->webhooks->getDeliveryChart(
-                    new WebhookDeliveryFilter('2026-11-01', '2026-11-05', self::UUID, self::UUID, '12345', 200)
-                );
-            }],
             'webhooks.resend' => ['POST /v1/webhook/audit/{auditWebhookId}/resend', static function (CredicarroClient $c) {
                 return $c->webhooks->resend(self::UUID);
             }],
