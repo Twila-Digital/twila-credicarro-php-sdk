@@ -130,15 +130,15 @@ foreach ($proposta->getPendingActions() as $acao) {
 use Twila\Credicarro\Simulations\CommissionReturnTarget;
 use Twila\Credicarro\Simulations\SimulationType;
 
-$faixas = $client->simulations->getCommissionReturns('11.222.333/0001-81'); // [] se a loja não tiver retorno
+$faixas = $client->simulations->getCommissionReturns('11.222.333/0001-81');
 foreach ($faixas as $faixa) {
     if ($faixa->type === SimulationType::FINANCING && $faixa->target === CommissionReturnTarget::STORE) {
-        $retorno = $faixa->maximumReturn; // entre $faixa->minimumReturn e $faixa->maximumReturn
+        $retorno = $faixa->maximumReturn;
     }
 }
 ```
 
-Fora da faixa, a API retorna `422 Store.CommissionReturn.OutOfRange`; sem faixa configurada, `422 Store.CommissionReturn.NotConfigured`. `null` não é enviado, e as rotas v1 ignoram o campo.
+O valor precisa estar entre `minimumReturn` e `maximumReturn`, e lista vazia significa loja sem retorno configurado. Fora da faixa, a API retorna `422 Store.CommissionReturn.OutOfRange`; sem faixa configurada, `422 Store.CommissionReturn.NotConfigured`. `null` não é enviado, e as rotas v1 ignoram o campo.
 
 Os valores do cliente (nome, CPF, endereço) precisam bater com os documentos enviados depois. O CPF identifica o cliente em todas as chamadas — não é preciso guardar o `id_cliente`.
 
@@ -292,17 +292,15 @@ Histórico e reenvio:
 use Twila\Credicarro\ListRequest;
 use Twila\Credicarro\Webhooks\WebhookDeliveryFilter;
 
-// Envios que falharam na semana (filtros opcionais; data sem horário vale pelo dia inteiro)
 $falhas = $client->webhooks->listDeliveries(
     new WebhookDeliveryFilter('2026-11-01', '2026-11-07', null, null, null, 500),
     new ListRequest(1, 20)
 );
 
-// Reenvia o mesmo corpo para a sua URL depois de corrigir a falha
 $resultado = $client->webhooks->resend($falhas->items[0]->id);
 ```
 
-O reenvio chega com uma `Idempotency-Key` nova (`{id_mensagem}:{id_webhook}:{id_tentativa}`); para tratá-lo como a mesma notificação, deduplique pelo prefixo `{id_mensagem}:{id_webhook}`. `statusCode` vem `null` quando a sua URL não respondeu.
+Os filtros do histórico são opcionais, e uma data sem horário vale pelo dia inteiro. O reenvio manda o mesmo corpo e chega com uma `Idempotency-Key` nova (`{id_mensagem}:{id_webhook}:{id_tentativa}`); para tratá-lo como a mesma notificação, deduplique pelo prefixo `{id_mensagem}:{id_webhook}`. `statusCode` vem `null` quando a sua URL não respondeu.
 
 Validação das notificações recebidas — sempre contra o **corpo bruto** da requisição, antes de desserializar:
 
