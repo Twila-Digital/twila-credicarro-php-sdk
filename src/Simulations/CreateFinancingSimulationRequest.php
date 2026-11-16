@@ -36,6 +36,14 @@ final class CreateFinancingSimulationRequest
      */
     public $storeCnpj;
 
+    /**
+     * Retorno de comissão (`retornoComissao`). Opcional; quando informado, precisa estar na faixa `Financing` da
+     * loja (veja `SimulationsClient::getCommissionReturns`). Só é enviado na v2; `null` não é enviado.
+     *
+     * @var int|null
+     */
+    public $commissionReturn;
+
     public function __construct(
         #[\SensitiveParameter]
         string $cpf,
@@ -44,7 +52,8 @@ final class CreateFinancingSimulationRequest
         float $downPayment,
         string $state,
         bool $isZeroKm,
-        ?string $storeCnpj = null
+        ?string $storeCnpj = null,
+        ?int $commissionReturn = null
     ) {
         $this->cpf = $cpf;
         $this->licensePlate = $licensePlate;
@@ -53,6 +62,7 @@ final class CreateFinancingSimulationRequest
         $this->state = $state;
         $this->isZeroKm = $isZeroKm;
         $this->storeCnpj = $storeCnpj;
+        $this->commissionReturn = $commissionReturn;
     }
 
     /**

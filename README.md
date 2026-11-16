@@ -124,6 +124,22 @@ foreach ($proposta->getPendingActions() as $acao) {
 }
 ```
 
+**Retorno de comissão (opcional).** Consulte as faixas da loja e envie `commissionReturn` (último argumento de `CreateFinancingSimulationRequest`/`CreateRefinancingSimulationRequest`) dentro da faixa da modalidade, com `target` `CommissionReturnTarget::STORE`:
+
+```php
+use Twila\Credicarro\Simulations\CommissionReturnTarget;
+use Twila\Credicarro\Simulations\SimulationType;
+
+$faixas = $client->simulations->getCommissionReturns('11.222.333/0001-81');
+foreach ($faixas as $faixa) {
+    if ($faixa->type === SimulationType::FINANCING && $faixa->target === CommissionReturnTarget::STORE) {
+        $retorno = $faixa->maximumReturn;
+    }
+}
+```
+
+O valor precisa estar entre `minimumReturn` e `maximumReturn`, e lista vazia significa loja sem retorno configurado. Fora da faixa, a API retorna `422 Store.CommissionReturn.OutOfRange`; sem faixa configurada, `422 Store.CommissionReturn.NotConfigured`. `null` não é enviado, e as rotas v1 ignoram o campo.
+
 Os valores do cliente (nome, CPF, endereço) precisam bater com os documentos enviados depois. O CPF identifica o cliente em todas as chamadas — não é preciso guardar o `id_cliente`.
 
 ## Clientes por recurso
@@ -131,9 +147,9 @@ Os valores do cliente (nome, CPF, endereço) precisam bater com os documentos en
 | Cliente | Métodos |
 | --- | --- |
 | `$client->customers` | `upsert`, `create`, `upsertAddress`, `upsertProfessionalData` |
-| `$client->simulations` | `getFinancingRange`, `getRefinancingRange`, `createFinancing`, `createRefinancing`, `get`, `list` |
+| `$client->simulations` | `getFinancingRange`, `getRefinancingRange`, `getCommissionReturns`, `createFinancing`, `createRefinancing`, `get`, `list` |
 | `$client->proposals` | `create`, `get`, `list`, `sendVehicleDetails`, `sendDepositAccount`, `uploadDocument` |
-| `$client->webhooks` | `create`, `list`, `update`, `delete` |
+| `$client->webhooks` | `create`, `list`, `update`, `delete`, `listDeliveries`, `resend` |
 | `$client->v1->simulations` | `getFinancingRange`, `getRefinancingRange`, `createFinancing`, `createRefinancing` (rotas v1, sem `cnpjLoja`) |
 | `$client->v1->proposals` | `create`, `get` (rotas v1) |
 
@@ -162,6 +178,7 @@ O SDK gera um `Idempotency-Key` (UUID) por chamada lógica — e reaproveita **a
 | `webhooks->update`, `webhooks->delete` | Sim |
 | `customers->upsert` sem chave | **Não** |
 | `webhooks->create` | **Não** (a rota não aceita chave): consulte `webhooks->list()` antes de tentar de novo |
+| `webhooks->resend` | **Não** (repetir dispararia o webhook de novo); espera até 30 s pela resposta da sua URL |
 
 Falhas transitórias: `408`, `429` (respeitando `Retry-After`), `500`, `502`, `503`, `504`, falha de rede e timeout de tentativa. Nenhum outro `4xx` é repetido. Redirects (`3xx`) nunca são seguidos: viram `CredicarroApiException`.
 
@@ -201,7 +218,7 @@ $client->proposals->uploadDocument(
 
 ## Paginação
 
-`simulations->list`, `proposals->list` e `webhooks->list` retornam um `PagedResult` — sem auto-paginação, você controla explicitamente o avanço de página. `ListRequest(página, tamanho)` valida no cliente `página ≥ 1` e `tamanho` entre 1 e 100.
+`simulations->list`, `proposals->list`, `webhooks->list` e `webhooks->listDeliveries` retornam um `PagedResult` — sem auto-paginação, você controla explicitamente o avanço de página. `ListRequest(página, tamanho)` valida no cliente `página ≥ 1` e `tamanho` entre 1 e 100.
 
 ```php
 use Twila\Credicarro\ListRequest;
@@ -268,6 +285,22 @@ $resultado = $client->webhooks->create(new CreateWebhookRequest(
 // O segredo de assinatura só vem NESTA resposta: guarde-o em um gerenciador de segredos.
 $segredo = $resultado->signingSecret;
 ```
+
+Histórico e reenvio:
+
+```php
+use Twila\Credicarro\ListRequest;
+use Twila\Credicarro\Webhooks\WebhookDeliveryFilter;
+
+$falhas = $client->webhooks->listDeliveries(
+    new WebhookDeliveryFilter('2026-11-01', '2026-11-07', null, null, null, 500),
+    new ListRequest(1, 20)
+);
+
+$resultado = $client->webhooks->resend($falhas->items[0]->id);
+```
+
+Os filtros do histórico são opcionais, e uma data sem horário vale pelo dia inteiro. O reenvio manda o mesmo corpo e chega com uma `Idempotency-Key` nova (`{id_mensagem}:{id_webhook}:{id_tentativa}`); para tratá-lo como a mesma notificação, deduplique pelo prefixo `{id_mensagem}:{id_webhook}`. `statusCode` vem `null` quando a sua URL não respondeu.
 
 Validação das notificações recebidas — sempre contra o **corpo bruto** da requisição, antes de desserializar:
 

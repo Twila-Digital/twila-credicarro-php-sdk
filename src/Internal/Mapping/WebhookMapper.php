@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Twila\Credicarro\Internal\Mapping;
 
+use Twila\Credicarro\Internal\Http\QueryStringBuilder;
 use Twila\Credicarro\Webhooks\CreateWebhookRequest;
 use Twila\Credicarro\Webhooks\CreateWebhookResult;
 use Twila\Credicarro\Webhooks\UpdateWebhookRequest;
 use Twila\Credicarro\Webhooks\Webhook;
 use Twila\Credicarro\Webhooks\WebhookAuthenticationType;
+use Twila\Credicarro\Webhooks\WebhookDelivery;
+use Twila\Credicarro\Webhooks\WebhookDeliveryFilter;
+use Twila\Credicarro\Webhooks\WebhookResendResult;
 use Twila\Credicarro\Webhooks\WebhookStatus;
 use Twila\Credicarro\Webhooks\WebhookType;
 
@@ -51,6 +55,50 @@ final class WebhookMapper
             Wire::string($wire, 'id_webhook'),
             Wire::string($wire, 'segredo_assinatura')
         );
+    }
+
+    public static function deliveryFilterToQuery(
+        QueryStringBuilder $query,
+        ?WebhookDeliveryFilter $filter
+    ): QueryStringBuilder {
+        if ($filter === null) {
+            return $query;
+        }
+
+        return $query
+            ->add('data_inicial', $filter->initialDate)
+            ->add('data_final', $filter->finalDate)
+            ->add('id_proposta', $filter->proposalId)
+            ->add('id_simulacao', $filter->simulationId)
+            ->add('numero_proposta', $filter->proposalNumber)
+            ->add('status_http', $filter->statusCode);
+    }
+
+    /**
+     * @param array<mixed> $wire
+     */
+    public static function deliveryFromWire(array $wire): WebhookDelivery
+    {
+        $type = Wire::nullableString($wire, 'tipo');
+
+        return new WebhookDelivery(
+            Wire::string($wire, 'id_auditoria'),
+            Wire::nullableString($wire, 'id_webhook'),
+            WebhookType::fromWireName($type),
+            $type,
+            Wire::string($wire, 'requisicao'),
+            Wire::string($wire, 'resposta'),
+            Wire::nullableInt($wire, 'status_http'),
+            Wire::string($wire, 'data_criacao')
+        );
+    }
+
+    /**
+     * @param array<mixed> $wire
+     */
+    public static function resendResultFromWire(array $wire): WebhookResendResult
+    {
+        return new WebhookResendResult(Wire::nullableInt($wire, 'status_http'), Wire::string($wire, 'resposta'));
     }
 
     /**

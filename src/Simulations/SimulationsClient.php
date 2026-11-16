@@ -54,6 +54,24 @@ final class SimulationsClient
     }
 
     /**
+     * Faixas de retorno de comissão da loja (`GET v2/proposal/simulation/commission-returns`). Lista vazia quando a
+     * loja não tem retorno configurado. A simulação valida pela faixa com `target` `CommissionReturnTarget::STORE`.
+     *
+     * @return array<int, CommissionReturn>
+     */
+    public function getCommissionReturns(string $storeCnpj): array
+    {
+        $path = (new QueryStringBuilder())
+            ->add('cnpjLoja', Validation::requireNotBlank($storeCnpj, 'cnpjLoja'))
+            ->build('v2/proposal/simulation/commission-returns');
+
+        $response = $this->executor->get($path);
+        ApiRequestExecutor::ensureSuccess($response);
+
+        return SimulationMapper::commissionReturnsFromWire(ResponseReader::object($response));
+    }
+
+    /**
      * Cria a simulação de financiamento (`POST v2/proposal/simulation/financing`), uma opção por prazo.
      * O cliente precisa estar cadastrado. `storeCnpj` é obrigatório. Recebe Idempotency-Key automática.
      *
