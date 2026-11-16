@@ -57,8 +57,10 @@ final class WebhookMapper
         );
     }
 
-    public static function deliveryFilterToQuery(QueryStringBuilder $query, ?WebhookDeliveryFilter $filter): QueryStringBuilder
-    {
+    public static function deliveryFilterToQuery(
+        QueryStringBuilder $query,
+        ?WebhookDeliveryFilter $filter
+    ): QueryStringBuilder {
         if ($filter === null) {
             return $query;
         }

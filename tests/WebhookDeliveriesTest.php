@@ -151,8 +151,20 @@ final class WebhookDeliveriesTest extends TestCase
     {
         $h = TestClientFactory::harness([TestClientFactory::json(200, [
             'retornos_comissao' => [
-                ['tipo' => 'Financing', 'alvo' => 'Store', 'retorno_minimo' => 0, 'retorno_maximo' => 4, 'permite_taxa_padrao' => true],
-                ['tipo' => 'Outro', 'alvo' => 'Novo', 'retorno_minimo' => 1, 'retorno_maximo' => 3, 'permite_taxa_padrao' => false],
+                [
+                    'tipo' => 'Financing',
+                    'alvo' => 'Store',
+                    'retorno_minimo' => 0,
+                    'retorno_maximo' => 4,
+                    'permite_taxa_padrao' => true,
+                ],
+                [
+                    'tipo' => 'Outro',
+                    'alvo' => 'Novo',
+                    'retorno_minimo' => 1,
+                    'retorno_maximo' => 3,
+                    'permite_taxa_padrao' => false,
+                ],
             ],
         ])]);
 
@@ -180,7 +192,16 @@ final class WebhookDeliveriesTest extends TestCase
         ]);
 
         $h->client->simulations->createFinancing(
-            new CreateFinancingSimulationRequest('12345678909', 'ABC1D23', 45000.0, 5000.0, 'SP', false, '11222333000181', 2)
+            new CreateFinancingSimulationRequest(
+                '12345678909',
+                'ABC1D23',
+                45000.0,
+                5000.0,
+                'SP',
+                false,
+                '11222333000181',
+                2
+            )
         );
         $h->client->simulations->createRefinancing(
             new CreateRefinancingSimulationRequest('12345678909', 'ABC1D23', 25000.0, '11222333000181')
@@ -205,7 +226,16 @@ final class WebhookDeliveriesTest extends TestCase
 
         try {
             $h->client->simulations->createFinancing(
-                new CreateFinancingSimulationRequest('12345678909', 'ABC1D23', 45000.0, 5000.0, 'SP', false, '11222333000181', 9)
+                new CreateFinancingSimulationRequest(
+                    '12345678909',
+                    'ABC1D23',
+                    45000.0,
+                    5000.0,
+                    'SP',
+                    false,
+                    '11222333000181',
+                    9
+                )
             );
             self::fail('Esperava CredicarroBusinessRuleException.');
         } catch (CredicarroBusinessRuleException $e) {
