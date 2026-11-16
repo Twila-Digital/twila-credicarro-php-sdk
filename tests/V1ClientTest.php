@@ -336,7 +336,12 @@ final class V1ClientTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private static function withoutCpfOption(int $term, float $installment, float $minimumDownPayment, ?float $retention = null): array
+    private static function withoutCpfOption(
+        int $term,
+        float $installment,
+        float $minimumDownPayment,
+        ?float $retention = null
+    ): array
     {
         $wire = [
             'valor_solicitado' => 39000,

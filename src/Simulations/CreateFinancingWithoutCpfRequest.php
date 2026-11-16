@@ -16,7 +16,8 @@ final class CreateFinancingWithoutCpfRequest
     public $state;
 
     /**
-     * Valor de entrada (`valorEntrada`). Quando `null`, o campo não é enviado e a API usa a entrada mínima da taxa da loja.
+     * Valor de entrada (`valorEntrada`). Quando `null`, o campo não é enviado e a API usa a entrada
+     * mínima da taxa da loja.
      *
      * @var float|null
      */
