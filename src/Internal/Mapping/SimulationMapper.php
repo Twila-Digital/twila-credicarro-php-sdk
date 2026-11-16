@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Twila\Credicarro\Internal\Mapping;
 
 use Twila\Credicarro\Simulations\CreateFinancingSimulationRequest;
+use Twila\Credicarro\Simulations\CreateFinancingWithoutCpfRequest;
 use Twila\Credicarro\Simulations\CreateRefinancingSimulationRequest;
+use Twila\Credicarro\Simulations\CreateRefinancingWithoutCpfRequest;
 use Twila\Credicarro\Simulations\FinancingRangeOption;
+use Twila\Credicarro\Simulations\FinancingWithoutCpfOption;
 use Twila\Credicarro\Simulations\RefinancingRangeOption;
+use Twila\Credicarro\Simulations\RefinancingWithoutCpfOption;
 use Twila\Credicarro\Simulations\Simulation;
 use Twila\Credicarro\Simulations\SimulationCet;
 use Twila\Credicarro\Simulations\SimulationInterest;
@@ -44,6 +48,26 @@ final class SimulationMapper
     }
 
     /**
+     * `valorEntrada` só vai no JSON quando informado.
+     *
+     * @return array<string, mixed>
+     */
+    public static function financingWithoutCpfRequestToWire(CreateFinancingWithoutCpfRequest $request): array
+    {
+        $wire = [
+            'placa' => $request->licensePlate,
+            'valorVeiculo' => $request->vehicleAmount,
+            'uf' => $request->state,
+        ];
+
+        if ($request->downPayment !== null) {
+            $wire['valorEntrada'] = $request->downPayment;
+        }
+
+        return $wire;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public static function refinancingRequestToWire(CreateRefinancingSimulationRequest $request, bool $withStore): array
@@ -59,6 +83,18 @@ final class SimulationMapper
         }
 
         return $wire;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function refinancingWithoutCpfRequestToWire(CreateRefinancingWithoutCpfRequest $request): array
+    {
+        return [
+            'placa' => $request->licensePlate,
+            'valorSolicitado' => $request->requestedAmount,
+            'uf' => $request->state,
+        ];
     }
 
     /**
@@ -120,6 +156,69 @@ final class SimulationMapper
                 Wire::float($item, 'percentual_cet_anual'),
                 Wire::float($item, 'percentual_juros_mensal'),
                 Wire::float($item, 'percentual_juros_anual'),
+                Wire::nullableFloat($item, 'valor_retencao_diaria_aproximado')
+            );
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array<mixed> $wire
+     * @return array<int, FinancingWithoutCpfOption>
+     */
+    public static function financingWithoutCpfOptionsFromWire(array $wire): array
+    {
+        $options = [];
+        foreach (Wire::objects($wire, 'cotacoes') as $item) {
+            $options[] = new FinancingWithoutCpfOption(
+                Wire::float($item, 'valor_solicitado'),
+                Wire::int($item, 'prazo'),
+                Wire::float($item, 'valor_parcela'),
+                Wire::float($item, 'valor_tac'),
+                Wire::float($item, 'valor_boleto'),
+                Wire::float($item, 'valor_seguro'),
+                Wire::float($item, 'valor_iof'),
+                Wire::float($item, 'percentual_iof'),
+                Wire::float($item, 'valor_credito_total'),
+                Wire::float($item, 'valor_divida_total'),
+                Wire::float($item, 'percentual_cet_mensal'),
+                Wire::float($item, 'percentual_cet_anual'),
+                Wire::float($item, 'percentual_juros_mensal'),
+                Wire::float($item, 'percentual_juros_anual'),
+                Wire::float($item, 'valor_entrada_minima'),
+                Wire::nullableFloat($item, 'valor_retencao_diaria_aproximado')
+            );
+        }
+
+        return $options;
+    }
+
+    /**
+     * @param array<mixed> $wire
+     * @return array<int, RefinancingWithoutCpfOption>
+     */
+    public static function refinancingWithoutCpfOptionsFromWire(array $wire): array
+    {
+        $options = [];
+        foreach (Wire::objects($wire, 'cotacoes') as $item) {
+            $options[] = new RefinancingWithoutCpfOption(
+                Wire::float($item, 'valor_solicitado'),
+                Wire::int($item, 'prazo'),
+                Wire::float($item, 'valor_parcela'),
+                Wire::float($item, 'valor_tac'),
+                Wire::float($item, 'valor_boleto'),
+                Wire::float($item, 'valor_seguro'),
+                Wire::float($item, 'valor_iof'),
+                Wire::float($item, 'percentual_iof'),
+                Wire::float($item, 'valor_credito_total'),
+                Wire::float($item, 'valor_divida_total'),
+                Wire::float($item, 'percentual_cet_mensal'),
+                Wire::float($item, 'percentual_cet_anual'),
+                Wire::float($item, 'percentual_juros_mensal'),
+                Wire::float($item, 'percentual_juros_anual'),
+                Wire::float($item, 'valor_minimo_refinanciavel'),
+                Wire::float($item, 'valor_maximo_refinanciavel'),
                 Wire::nullableFloat($item, 'valor_retencao_diaria_aproximado')
             );
         }

@@ -27,6 +27,11 @@ final class IdempotencyClassifier
         '#^v2/proposal/[^/]+/(vehicle-detail|deposit-account)$#',
     ];
 
+    private const READ_ONLY_POST_PATTERNS = [
+        '#^v1/proposal/simulation/financing/without-cpf$#',
+        '#^v1/proposal/simulation/refinancing/without-cpf$#',
+    ];
+
     private const TOKEN_PATH = 'v1/authentication/accesstoken';
 
     private const WEBHOOK_ITEM_PATTERN = '#^v1/webhook/[^/]+$#';
@@ -58,6 +63,7 @@ final class IdempotencyClassifier
 
         return $hasIdempotencyKey
             || $path === self::TOKEN_PATH
+            || self::matchesAny($path, self::READ_ONLY_POST_PATTERNS)
             || self::matchesAny($path, self::REPLACE_SEMANTICS_PATTERNS);
     }
 

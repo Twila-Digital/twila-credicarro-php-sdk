@@ -134,10 +134,36 @@ Os valores do cliente (nome, CPF, endereço) precisam bater com os documentos en
 | `$client->simulations` | `getFinancingRange`, `getRefinancingRange`, `createFinancing`, `createRefinancing`, `get`, `list` |
 | `$client->proposals` | `create`, `get`, `list`, `sendVehicleDetails`, `sendDepositAccount`, `uploadDocument` |
 | `$client->webhooks` | `create`, `list`, `update`, `delete` |
-| `$client->v1->simulations` | `getFinancingRange`, `getRefinancingRange`, `createFinancing`, `createRefinancing` (rotas v1, sem `cnpjLoja`) |
+| `$client->v1->simulations` | `getFinancingRange`, `getRefinancingRange`, `createFinancing`, `createFinancingWithoutCpf`, `createRefinancing`, `createRefinancingWithoutCpf` (rotas v1, sem `cnpjLoja`) |
 | `$client->v1->proposals` | `create`, `get` (rotas v1) |
 
 Para novas integrações use a v2 (`simulations` e `proposals`), em que a loja é escolhida pelo `cnpjLoja` e a consulta da proposta devolve etapas, biometria e documentos.
+
+### Simulação sem CPF
+
+`$client->v1->simulations->createFinancingWithoutCpf` calcula as parcelas só com placa, valor do veículo e UF, sem CPF e sem cadastro de cliente, usando a loja de integração do parceiro. Nada é gravado: as opções não têm `simulationId` e não servem para criar proposta. A entrada é opcional (omitida, a API usa a entrada mínima da taxa da loja). Não usa `Idempotency-Key` e é seguro repetir.
+
+```php
+use Twila\Credicarro\Simulations\CreateFinancingWithoutCpfRequest;
+
+$opcoes = $client->v1->simulations->createFinancingWithoutCpf(
+    new CreateFinancingWithoutCpfRequest('ABC1D23', 45000.0, 'SP', 5000.0) // placa, valor do veículo, UF, entrada (opcional)
+);
+
+foreach ($opcoes as $opcao) {
+    echo "{$opcao->term}x de {$opcao->installmentAmount} (entrada mínima {$opcao->minimumDownPayment})" . PHP_EOL;
+}
+```
+
+`createRefinancingWithoutCpf` faz o mesmo para refinanciamento, só com placa, valor solicitado e UF (todos obrigatórios). Só voltam os prazos em cuja faixa o valor cabe, e cada opção traz `minimumAmount` e `maximumAmount`.
+
+```php
+use Twila\Credicarro\Simulations\CreateRefinancingWithoutCpfRequest;
+
+$opcoes = $client->v1->simulations->createRefinancingWithoutCpf(
+    new CreateRefinancingWithoutCpfRequest('ABC1D23', 25000.0, 'SP') // placa, valor solicitado, UF
+);
+```
 
 ### Cadastro de cliente: criar x atualizar
 
