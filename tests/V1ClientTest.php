@@ -341,8 +341,7 @@ final class V1ClientTest extends TestCase
         float $installment,
         float $minimumDownPayment,
         ?float $retention = null
-    ): array
-    {
+    ): array {
         $wire = [
             'valor_solicitado' => 39000,
             'prazo' => $term,
